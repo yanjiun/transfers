@@ -4,11 +4,11 @@ from enum import Enum
 from datetime import datetime
 from exceptions import UserNotFound, NotEnoughPoints, UserAlreadyExists
 
-class TransactionTypes(Enum):
+class TransferTypes(Enum):
     ADD = 1
     DEDUCT = 2
 
-class TransactionSystem:
+class TransferSystem:
     def __init__(self, dbName):
         self.dbHandle = DbHandle(dbName)
 
@@ -23,7 +23,7 @@ class TransactionSystem:
     def addPoints(self, userId, amount):
         totalPoints = self.dbHandle.lookupUserPoints(userId)
         updatedPoints = totalPoints + amount
-        self.dbHandle.insertTransactionRecord(userId, TransactionTypes.ADD, amount)
+        self.dbHandle.insertTransferRecord(userId, TransferTypes.ADD, amount)
         self.dbHandle.updateUserPoints(userId, updatedPoints)
         self.dbHandle.commitTransaction()
 
@@ -31,14 +31,14 @@ class TransactionSystem:
         totalPoints = self.dbHandle.lookupUserPoints(userId)
         if (totalPoints >= amount):
             updatedPoints = totalPoints - amount
-            self.dbHandle.insertTransactionRecord(userId, TransactionTypes.DEDUCT, amount)
+            self.dbHandle.insertTransferRecord(userId, TransferTypes.DEDUCT, amount)
             self.dbHandle.updateUserPoints(userId, updatedPoints)
             self.dbHandle.commitTransaction()
         else:
             raise NotEnoughPoints
 
-    def retreiveTransactionHistory(self, userId):
-        return self.dbHandle.lookupUserTransactionHistory(userId)
+    def retreiveTransferHistory(self, userId):
+        return self.dbHandle.lookupUserTransferHistory(userId)
 
 
 class DbHandle():
@@ -85,15 +85,15 @@ class DbHandle():
         c.execute('''UPDATE users SET totalPoints=?
             WHERE userId=?''', (totalPoints, userId))
 
-    def insertTransactionRecord(self, userId, type, amount):
-        transactionId = str(uuid.uuid4())
+    def insertTransferRecord(self, userId, type, amount):
+        transferId = str(uuid.uuid4())
         c = self.connection.cursor()
         timestamp = datetime.now().isoformat(timespec="seconds")
-        transactionRecord = (transactionId, type.value, userId, amount, timestamp)
+        transferRecord = (transferId, type.value, userId, amount, timestamp)
         c.execute('''INSERT INTO transfers
-            VALUES (?, ?, ?, ?, ?)''', transactionRecord)
+            VALUES (?, ?, ?, ?, ?)''', transferRecord)
 
-    def lookupUserTransactionHistory(self, userId):
+    def lookupUserTransferHistory(self, userId):
         c = self.connection.cursor()
         c.execute('''SELECT amount, type from transfers
             WHERE userId=? ORDER BY lastUpdateDatetime''', (userId, ))

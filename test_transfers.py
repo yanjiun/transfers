@@ -1,26 +1,26 @@
 import unittest
 import sqlite3
-from transactions import TransactionSystem, TransactionTypes
+from transfers import TransferSystem, TransferTypes
 from initializeDb import createDb
 from exceptions import UserNotFound, NotEnoughPoints, UserAlreadyExists
 
-class TestTransactionSystem(unittest.TestCase):
+class TestTransferSystem(unittest.TestCase):
 
     def setUp(self):
         createDb("mock.db")
-        self.transactionSystem = TransactionSystem("mock.db")
+        self.TransferSystem = TransferSystem("mock.db")
         self.connection = sqlite3.connect("mock.db")
         self.connection.row_factory = sqlite3.Row
 
     def tearDown(self):
-        self.transactionSystem = None
+        self.transferSystem = None
         c = self.connection.cursor()
         c.execute('''DROP TABLE transfers''')
         c.execute('''DROP TABLE users''')
         self.connection.commit()
 
     def test_createUser(self):
-        userId = self.transactionSystem.createUser("YJ", "Chen", "chen.yanjiun@gmail.com")
+        userId = self.transferSystem.createUser("YJ", "Chen", "chen.yanjiun@gmail.com")
         c = self.connection.cursor()
         c.execute('''SELECT * FROM users WHERE userId=?''', (userId, ))
         row = c.fetchone()
@@ -30,23 +30,23 @@ class TestTransactionSystem(unittest.TestCase):
         self.assertEqual(row["totalPoints"], 0)
 
     def test_createUserAlreadyExists(self):
-        self.transactionSystem.createUser("YJ", "Chen", "chen.yanjiun@gmail.com")
+        self.transferSystem.createUser("YJ", "Chen", "chen.yanjiun@gmail.com")
         with self.assertRaises(UserAlreadyExists):
-            self.transactionSystem.createUser("YJ", "Chen", "chen.yanjiun@gmail.com")
+            self.transferSystem.createUser("YJ", "Chen", "chen.yanjiun@gmail.com")
 
     def test_lookupValidUser(self):
-        userId = self.transactionSystem.createUser("YJ", "Chen", "abc@123.com")
-        self.assertEqual(self.transactionSystem.lookupUserId("abc@123.com"), userId);
+        userId = self.transferSystem.createUser("YJ", "Chen", "abc@123.com")
+        self.assertEqual(self.transferSystem.lookupUserId("abc@123.com"), userId);
 
     def test_lookupInvalidUser(self):
         with self.assertRaises(UserNotFound):
-            self.assertEqual(self.transactionSystem.lookupUserId("random@blah.foo"))
+            self.assertEqual(self.transferSystem.lookupUserId("random@blah.foo"))
 
     def test_addPoints(self):
-        userId = self.transactionSystem.createUser("YJ", "Chen", "yj@yay.org")
+        userId = self.transferSystem.createUser("YJ", "Chen", "yj@yay.org")
         pointsToAdd = 10
 
-        self.transactionSystem.addPoints(userId, pointsToAdd);
+        self.transferSystem.addPoints(userId, pointsToAdd);
 
         c = self.connection.cursor()
         c.execute('''SELECT totalPoints FROM users WHERE userId=?''', (userId, ))
@@ -56,18 +56,18 @@ class TestTransactionSystem(unittest.TestCase):
         rows = c.fetchall()
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["amount"], pointsToAdd)
-        self.assertEqual(rows[0]["type"], TransactionTypes.ADD.value)
+        self.assertEqual(rows[0]["type"], TransferTypes.ADD.value)
 
     def test_addPointsInvalidUser(self):
         invalidId = "abcc"
         pointsToAdd = 10
         with self.assertRaises(UserNotFound):
-            self.transactionSystem.addPoints(invalidId, pointsToAdd)
+            self.transferSystem.addPoints(invalidId, pointsToAdd)
 
     def test_deductPoints(self):
-        userId = self.transactionSystem.createUser("YJ", "Chen", "yj@yay.org")
-        self.transactionSystem.addPoints(userId, 10);
-        self.transactionSystem.deductPoints(userId, 3);
+        userId = self.transferSystem.createUser("YJ", "Chen", "yj@yay.org")
+        self.transferSystem.addPoints(userId, 10);
+        self.transferSystem.deductPoints(userId, 3);
 
         c = self.connection.cursor()
         c.execute('''SELECT totalPoints FROM users WHERE userId=?''', (userId, ))
@@ -77,9 +77,9 @@ class TestTransactionSystem(unittest.TestCase):
         rows = c.fetchall()
         self.assertEqual(len(rows), 2)
         for r in rows:
-            if r["type"] == TransactionTypes.ADD.value:
+            if r["type"] == TransferTypes.ADD.value:
                 self.assertEqual(r["amount"], 10)
-            elif r["type"] == TransactionTypes.DEDUCT.value:
+            elif r["type"] == TransferTypes.DEDUCT.value:
                 self.assertEqual(r["amount"], 3)
             else:
                 self.assertFalse(1==1, "invalid transfer type found")
@@ -87,21 +87,21 @@ class TestTransactionSystem(unittest.TestCase):
     def test_deductPointsInvalidUser(self):
         invalidId = "abcc"
         with self.assertRaises(UserNotFound):
-            self.transactionSystem.addPoints(invalidId, 33)
+            self.transferSystem.addPoints(invalidId, 33)
 
     def test_deductPointsInsufficientPoints(self):
-        userId = self.transactionSystem.createUser("YJ", "Chen", "yj@yay.org")
-        self.transactionSystem.addPoints(userId, 2);
+        userId = self.transferSystem.createUser("YJ", "Chen", "yj@yay.org")
+        self.transferSystem.addPoints(userId, 2);
         with self.assertRaises(NotEnoughPoints):
-            self.transactionSystem.deductPoints(userId, 3);
+            self.transferSystem.deductPoints(userId, 3);
 
     def test_retrieveHistory(self):
-        userId = self.transactionSystem.createUser("YJ", "Chen", "yj@yay.org")
-        self.transactionSystem.addPoints(userId, 10);
-        self.transactionSystem.deductPoints(userId, 3);
-        self.transactionSystem.deductPoints(userId, 2);
+        userId = self.transferSystem.createUser("YJ", "Chen", "yj@yay.org")
+        self.transferSystem.addPoints(userId, 10);
+        self.transferSystem.deductPoints(userId, 3);
+        self.transferSystem.deductPoints(userId, 2);
 
-        history = self.transactionSystem.retreiveTransactionHistory(userId)
+        history = self.transferSystem.retreiveTransferHistory(userId)
 
         expectedHistory = [
             {"amount": 10.0, "type": 1},
@@ -111,9 +111,9 @@ class TestTransactionSystem(unittest.TestCase):
         self.assertEquals(history, expectedHistory)
 
     def test_retrieveEmptyHistory(self):
-        userId = self.transactionSystem.createUser("YJ", "Chen", "yj@yay.org")
+        userId = self.transferSystem.createUser("YJ", "Chen", "yj@yay.org")
 
-        history = self.transactionSystem.retreiveTransactionHistory(userId)
+        history = self.transferSystem.retreiveTransferHistory(userId)
         self.assertEqual(history, [])
 
 if __name__ == "__main__":

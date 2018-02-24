@@ -12,8 +12,8 @@ TODO
 2. Initialize DB with script
     python initializeDb.py <dbName>
 3. use the API by importing
-        from transactions import TransactionSystem
-        ts = TransactionSystem("transfers.db") 
+        from transfers import TransferSystem
+        ts = TransferSystem("transfers.db") 
         ts.createUser("Bart", "Simpson", "bs@foo.bar")
 
 ## API
@@ -23,14 +23,14 @@ methods include:
 - lookupUserId
 - addPoints
 - deductPoints
-- retrieveTransactionHistory
+- retrieveTransferHistory
 
 see docstrings for more details
 
 ## To test
 
 run
-   python test_transactions.py
+   python test_transfers.py
 
 ## Further Considerations
 - sqlite was used as the database, but if delivering to production we may want to migrate to postgresql
