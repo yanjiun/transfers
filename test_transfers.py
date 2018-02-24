@@ -8,7 +8,7 @@ class TestTransferSystem(unittest.TestCase):
 
     def setUp(self):
         createDb("mock.db")
-        self.TransferSystem = TransferSystem("mock.db")
+        self.transferSystem = TransferSystem("mock.db")
         self.connection = sqlite3.connect("mock.db")
         self.connection.row_factory = sqlite3.Row
 
@@ -108,7 +108,7 @@ class TestTransferSystem(unittest.TestCase):
             {"amount": 3.0, "type": 2},
             {"amount": 2.0, "type": 2}
         ]
-        self.assertEquals(history, expectedHistory)
+        self.assertEqual(history, expectedHistory)
 
     def test_retrieveEmptyHistory(self):
         userId = self.transferSystem.createUser("YJ", "Chen", "yj@yay.org")
