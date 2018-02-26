@@ -8,6 +8,8 @@ class TransferTypes(Enum):
     ADD = 1
     DEDUCT = 2
 
+#TODO: doc strings
+
 class TransferSystem:
     def __init__(self, dbName):
         self.dbHandle = DbHandle(dbName)
