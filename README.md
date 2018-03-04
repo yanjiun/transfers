@@ -14,7 +14,6 @@ assumes Python 3.6 or greater
         ts = TransferSystem("transfers.db") 
         ts.createUser("Bart", "Simpson", "bs@foo.bar")
 ```
-
 ## API
 
 methods include:
@@ -32,6 +31,9 @@ run
 ```
     python test_transfers.py
 ```
+
+## Assumptions
+- a unique email is required for each account
 
 ## Further Considerations
 - sqlite was used as the database, but if delivering to production we may want to migrate to postgresql

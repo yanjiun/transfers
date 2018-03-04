@@ -8,21 +8,54 @@ class TransferTypes(Enum):
     ADD = 1
     DEDUCT = 2
 
-#TODO: doc strings
-
 class TransferSystem:
+    """
+    Class that contains the apis for a point transfer system.
+    Assumes that an email may only correspond to one user account
+
+    Args:
+        dbName - name of sqlite db handle
+
+    Methods:
+        createUser - creates a user with name and email
+        lookupUserId - looks up user id via email
+        addPoints - adds points to an account
+        deductPoints - deducts points from an account
+        retrieveTransferHistory - retrieves the transfer history for an account
+    """
     def __init__(self, dbName):
         self.dbHandle = DbHandle(dbName)
 
     def createUser(self, firstName, lastName, email):
+        """
+        creates a new user account. Raises UserAlreadyExists exception if
+        user already exists
+
+        :param firstName: (str)
+        :param lastName: (str)
+        :param email: (str)
+        :return userId: (str) - the user id that was created
+        """
         userId = self.dbHandle.insertUserRecord(firstName, lastName, email)
         return userId
 
     def lookupUserId(self, email):
+        """
+        looks up a user's id based on their email. Raises exception UserNotFound if
+        user does not exist.
+        :param email: (str)
+        :return userId: (str)
+        """
         userId = self.dbHandle.lookupUserId(email)
         return userId
 
     def addPoints(self, userId, amount):
+        """
+        adds points to user's account based on userId. Raises exception
+        UserNotFound if user does not exist
+        :param userId: (str)
+        :param amount: (int)
+        """
         totalPoints = self.dbHandle.lookupUserPoints(userId)
         updatedPoints = totalPoints + amount
         self.dbHandle.insertTransferRecord(userId, TransferTypes.ADD, amount)
@@ -30,6 +63,14 @@ class TransferSystem:
         self.dbHandle.commitTransaction()
 
     def deductPoints(self, userId, amount):
+        """
+        deducts points from user's account based on userId. Raises
+        NotEnoughPoints if user has insufficient balance. Raises
+        UserNotFound if user does not exist
+        :param userId: (str)
+        :param amount: (int)
+        :return:
+        """
         totalPoints = self.dbHandle.lookupUserPoints(userId)
         if (totalPoints >= amount):
             updatedPoints = totalPoints - amount
@@ -40,6 +81,16 @@ class TransferSystem:
             raise NotEnoughPoints
 
     def retreiveTransferHistory(self, userId):
+        """
+        returns user's transfer history in chronological order
+        raises UserNotFound exception if user does not exist
+        :param userId: (str)
+        :return: (list) list of transfers with have structure
+                {
+                    type: ADD/DEDUCT,
+                    amount: (int)
+                }
+        """
         return self.dbHandle.lookupUserTransferHistory(userId)
 
 
